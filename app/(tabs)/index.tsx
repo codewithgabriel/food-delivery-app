@@ -1,98 +1,209 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { FoodCard } from '@/components/FoodCard';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { CATEGORIES, FOODS } from '@/constants/data';
+import { Colors } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Stack } from 'expo-router';
+import React, { useState } from 'react';
+import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useCart } from '@/context/CartContext';
+import { useRouter } from 'expo-router';
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+export default function DashboardScreen() {
+  const { user } = useAuth();
+  const { addToCart, itemCount } = useCart();
+  const router = useRouter();
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const filteredFoods = FOODS.filter(food => {
+    const matchesSearch = food.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || food.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.topRow}>
+        <View>
+          <Text style={[styles.greeting, { color: theme.icon }]}>Hello, {user?.name} 👋</Text>
+          <Text style={[styles.title, { color: theme.text }]}>What would you like to eat today?</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.cartButton, { backgroundColor: theme.secondary }]}
+          onPress={() => router.push('/cart')}
+        >
+          <IconSymbol name="cart.fill" size={24} color={theme.tint} />
+          {itemCount > 0 && (
+            <View style={[styles.badge, { backgroundColor: theme.error }]}>
+              <Text style={styles.badgeText}>{itemCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.searchContainer, { backgroundColor: theme.secondary }]}>
+        <IconSymbol name="magnifyingglass" size={20} color={theme.icon} />
+        <TextInput
+          style={[styles.searchInput, { color: theme.text }]}
+          placeholder="Search for food..."
+          placeholderTextColor={theme.icon}
+          value={search}
+          onChangeText={setSearch}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <View style={styles.categoriesContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <TouchableOpacity
+            style={[
+              styles.categoryItem,
+              { backgroundColor: selectedCategory === 'All' ? theme.tint : theme.secondary }
+            ]}
+            onPress={() => setSelectedCategory('All')}
+          >
+            <Text style={[styles.categoryIcon]}>🍴</Text>
+            <Text style={[
+              styles.categoryName,
+              { color: selectedCategory === 'All' ? '#FFFFFF' : theme.text }
+            ]}>All</Text>
+          </TouchableOpacity>
+          {CATEGORIES.map(cat => (
+            <TouchableOpacity
+              key={cat.id}
+              style={[
+                styles.categoryItem,
+                { backgroundColor: selectedCategory === cat.name ? theme.tint : theme.secondary }
+              ]}
+              onPress={() => setSelectedCategory(cat.name)}
+            >
+              <Text style={styles.categoryIcon}>{cat.icon}</Text>
+              <Text style={[
+                styles.categoryName,
+                { color: selectedCategory === cat.name ? '#FFFFFF' : theme.text }
+              ]}>{cat.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Popular Near You</Text>
+    </View>
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <FlatList
+        data={filteredFoods}
+        renderItem={({ item }) => (
+          <FoodCard
+            food={item}
+            onPress={() => router.push(`/food/${item.id}`)}
+            onAddToCart={() => addToCart(item)}
+          />
+        )}
+        keyExtractor={item => item.id}
+        ListHeaderComponent={renderHeader}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  listContent: {
+    padding: 24,
+    paddingTop: 60,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  cartButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    lineHeight: 32,
+    maxWidth: '80%',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: 16,
+    height: 56,
+    borderRadius: 16,
+    marginBottom: 24,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  categoriesContainer: {
+    marginBottom: 24,
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  categoryIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  categoryName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
 });
