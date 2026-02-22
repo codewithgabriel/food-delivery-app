@@ -9,8 +9,8 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const { width } = Dimensions.get('window');
 
-const RESTAURANT_COORD = { latitude: 37.7749, longitude: -122.4194 };
-const USER_COORD = { latitude: 37.78825, longitude: -122.4324 };
+const RESTAURANT_COORD = { latitude: 8.1574, longitude: 4.2443 }; // Near LAUTECH area
+const USER_COORD = { latitude: 8.1435, longitude: 4.2561 }; // Under G Area
 
 const STEPS = [
     { id: 1, title: 'Confirmed', icon: 'checkmark.circle.fill' },
